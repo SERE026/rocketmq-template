@@ -1,0 +1,34 @@
+title Broker消费端推送代码
+
+
+
+
+DefaultMessageStore->+DefaultMessageStore: 1. 启动 \n flushConsumeQueueService.start();\n commitLog.start();    \n storeStatsService.start();\n scheduleMessageService.start();;
+
+DefaultMessageStore->+ReputMessageService: 2.\nreputMessageService.start()
+note right of ReputMessageService: 当收到生产端消息
+
+ReputMessageService->+ReputMessageService:  3.\nthis.run() \nthis.doReput() \n
+
+
+ReputMessageService->+CommitLog: 4.\ncommitLog.getData()  
+
+CommitLog-->-ReputMessageService:4.1 \n返回消费消息offset
+
+ReputMessageService->+CommitLog: 5.\n commitLog.checkMessageAndReturnSize()  
+CommitLog-->-ReputMessageService:5.1\n返回DispatchRequest
+
+ReputMessageService-->+DefaultMessageStore: 6.DefaultMessageStore.doDispatch(); \n队列处理\n消息偏移量处理\ntopic过滤处理
+
+ReputMessageService->+NotifyMessageArrivingListener: 7.\n messageArrivingListener.arriving()
+
+NotifyMessageArrivingListener->+PullRequestHoldService: 8. \n pullRequestHoldService.notifyMessageArriving()
+
+PullRequestHoldService->+ExpressionMessageFilter:9.\nExpressionMessageFilter.isMatchedByConsumeQueue()\n//此方法采用布隆过滤、容错率10% 对tag进行过滤
+ExpressionMessageFilter-->-PullRequestHoldService: 9.1\n 匹配则返回true
+
+PullRequestHoldService->+PullMessageProcessor: 10.\nPullMessageProcessor.executeRequestWhenWakeup()
+
+PullMessageProcessor->+PullMessageProcessor:10.1\nPullMessageProcessor.this.processRequest()\n 推送消息
+
+

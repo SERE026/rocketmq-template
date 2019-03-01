@@ -1,0 +1,20 @@
+title broker端接收消息处理时序图 
+NettyRemotingServer->+NettyRemotingServer: start()\n register NettyServerHandler 注册netty handler
+
+NettyRemotingServer-->NettyServerHandler: channelRead0() 收到消息进入handler处理
+
+
+NettyServerHandler->+NettyRemotingAbstract:NettyRemotingAbstract.processMessageReceived()\n 消息处理开始
+
+NettyRemotingAbstract->+NettyRemotingAbstract:NettyRemotingAbstract.processRequestCommand()  消息处理
+
+NettyRemotingAbstract->+SendMessageProcessor:SendMessageProcessor.sendMessage()\n  发送消息处理
+
+SendMessageProcessor->+DefaultMessageStore:DefaultMessageStore.putMessage()   消息储存
+
+DefaultMessageStore->+CommitLog:commitLog.putMessage() 消息存储到commitlog
+
+CommitLog->+CommitLog:handleDiskFlush() 消息刷盘处理 \n handleHA() 消息同步处理
+
+ 
+CommitLog->+storeStatsService:getSinglePutMessageTopicTimesTotal() 统计今日生产总消息\n getSinglePutMessageTopicSizeTotal() 今日消费总消息\n ...\n
